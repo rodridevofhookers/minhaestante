@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Minha Estante!</title>
+<title>Minha estante</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&display=swap" rel="stylesheet">
 <style>
@@ -61,14 +61,14 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
 <body>
 <header>
   <div class="top">
-    <h1>Minha Estante!</h1>
+    <h1>Minha estante</h1>
     <button class="primary" id="add">Adicionar livro</button>
   </div>
   <p class="summary" id="summary"></p>
   <nav class="tabs" id="tabs" role="tablist"></nav>
 </header>
 <main id="main"></main>
-
+ 
 <dialog id="dlg">
   <form id="frm" class="form" autocomplete="off">
     <h2 id="dlgTitle">Novo livro</h2>
@@ -95,7 +95,7 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
     </div>
   </form>
 </dialog>
-
+ 
 <script>
 const KEY = 'minha-estante-v1';
 const $ = s => document.querySelector(s);
@@ -104,13 +104,13 @@ const ST = {quero:'Quero ler', lendo:'Lendo', lido:'Lidos'};
 const CORES = ['#6b3fb5','#2f6f5e','#b5523b','#2d5b8a','#a3781f','#8a3262','#4a4a7a','#3d7a3a'];
 const F = $('#frm');
 const fv = n => F.elements.namedItem(n);
-
+ 
 let books = [];
 try { books = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { books = []; }
 if (!Array.isArray(books)) books = [];
-
+ 
 let tab = 'lendo', rating = 0, editId = null, armed = false;
-
+ 
 function persist(){ try { localStorage.setItem(KEY, JSON.stringify(books)); } catch (e) {} }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function hue(t){ let h = 7; for (const c of t) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
@@ -127,7 +127,7 @@ function mesNome(ym){
   const s = new Date(+y, +m - 1, 1).toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'});
   return s[0].toUpperCase() + s.slice(1);
 }
-
+ 
 function shelf(arr){
   return `<div class="shelf">${arr.map(b => `
     <button class="bk" data-id="${b.id}" aria-label="${esc(b.title)}">
@@ -135,7 +135,7 @@ function shelf(arr){
       <small>${stars(b.rating)}</small>
     </button>`).join('')}</div>`;
 }
-
+ 
 function render(){
   const y = String(new Date().getFullYear());
   const lidos = books.filter(b => b.status === 'lido');
@@ -146,11 +146,11 @@ function render(){
   $('#summary').textContent = books.length
     ? `${ano.length} lidos em ${y}, ${fmt(pags)} páginas, nota média ${media}.`
     : 'Sua estante está vazia. Adicione o que você quer ler ou já leu.';
-
+ 
   $('#tabs').innerHTML = Object.entries(ST).map(([k, l]) =>
     `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-tab="${k}">${l} <small>${books.filter(b => b.status === k).length}</small></button>`
   ).join('');
-
+ 
   const list = books.filter(b => b.status === tab);
   let html = '';
   if (!list.length) {
@@ -169,16 +169,16 @@ function render(){
   }
   $('#main').innerHTML = html;
 }
-
+ 
 function setStars(n){
   rating = n;
   $('#stars').innerHTML = [1, 2, 3, 4, 5].map(i =>
     `<button type="button" class="st${i <= n ? ' on' : ''}" data-r="${i}" aria-label="${i} ${i > 1 ? 'estrelas' : 'estrela'}">★</button>`
   ).join('');
 }
-
+ 
 function toggleMes(){ $('#mesWrap').hidden = fv('status').value !== 'lido'; $('#pagWrap').hidden = fv('status').value !== 'lendo'; }
-
+ 
 function openDlg(id){
   editId = id;
   armed = false;
@@ -204,14 +204,14 @@ function openDlg(id){
   toggleMes();
   $('#dlg').showModal();
 }
-
+ 
 $('#add').onclick = () => openDlg(null);
 $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } };
 $('#main').onclick = e => { const b = e.target.closest('[data-id]'); if (b) openDlg(b.dataset.id); };
 $('#stars').onclick = e => { const b = e.target.closest('[data-r]'); if (b) { const n = +b.dataset.r; setStars(n === rating ? 0 : n); } };
 fv('status').addEventListener('change', toggleMes);
 $('#cancel').onclick = () => $('#dlg').close();
-
+ 
 F.addEventListener('submit', e => {
   e.preventDefault();
   const s = fv('status').value;
@@ -233,7 +233,7 @@ F.addEventListener('submit', e => {
   tab = s;
   render();
 });
-
+ 
 $('#del').onclick = () => {
   if (!editId) return;
   if (!armed) {
@@ -246,7 +246,7 @@ $('#del').onclick = () => {
   $('#dlg').close();
   render();
 };
-
+ 
 render();
 </script>
 </body>
