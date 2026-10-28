@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Minha Estante!</title>
+<title>Minha estante</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&display=swap" rel="stylesheet">
 <style>
@@ -92,12 +92,25 @@ dialog{width:min(780px,94vw)}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
 .pg{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media (max-width:640px){.cols{grid-template-columns:1fr;gap:12px}}
+.flyer{position:fixed;width:90px;height:150px;border-radius:6px;color:#fff;font:600 13px/1.25 Literata,Georgia,serif;padding:10px 8px;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;z-index:40;pointer-events:none;box-shadow:0 14px 30px rgba(0,0,0,.35)}
+.spine,.flyer{text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,0 0 4px rgba(0,0,0,.7)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:4px;padding-top:14px;border-top:1px solid var(--line)}
+.actions .grow{flex:1 1 0;min-width:8px}
+.actions .ghost{border:1px solid var(--line);border-radius:999px;padding:9px 18px;color:var(--ink)}
+.actions .primary{padding:10px 24px}
+.actions .danger{padding:9px 16px}
+#chars{display:flex;flex-direction:column;gap:8px}
+.char{display:grid;grid-template-columns:1fr 96px 36px;gap:8px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.char input,.char select{width:100%;padding:8px 9px;background:var(--surface)}
+.char select{font-size:14px}
+.char button{width:36px;height:36px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:20px;line-height:1;cursor:pointer}
+#addChar{width:100%;padding:10px;border:1px dashed var(--accent);border-radius:12px;background:none;color:var(--accent);font:600 14px system-ui;cursor:pointer}
 </style>
 </head>
 <body>
 <header>
   <div class="top">
-    <h1>Minha Estante</h1>
+    <h1>Minha estante</h1>
     <button class="primary" id="add">Adicionar livro</button>
   </div>
   <p class="summary" id="summary"></p>
@@ -123,9 +136,10 @@ dialog{width:min(780px,94vw)}
     <label id="mesWrap">Mês de leitura<input name="month" type="month"></label>
     <label id="pagWrap">Página atual<input name="current" type="number" min="0" inputmode="numeric"></label>
     <label>Cor da capa<input name="color" type="color"></label>
+    <label>Estampa da capa<select name="estampa"><option value="lisa">Lisa</option><option value="listras">Listras</option><option value="bolinhas">Bolinhas</option><option value="xadrez">Xadrez</option><option value="ondas">Ondas</option><option value="diagonais">Diagonais</option></select></label>
     </div><div class="pg">
     <div class="field">Nota<div id="stars"></div></div>
-    <label>Frase da avaliação<input name="frase" maxlength="120" placeholder="..."></label>
+    <label>Frase da avaliação<input name="frase" maxlength="120" placeholder="Escreva a frase que aparece com as estrelas"></label>
     <label>Resenha<textarea name="review" rows="5" placeholder="O que ficou com você? Personagens, ritmo, o final…"></textarea></label>
     <div class="field">Personagens e notas<div id="chars"></div><button type="button" class="ghost" id="addChar">+ Adicionar personagem</button></div>
     </div></div>
@@ -144,6 +158,15 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ST = {quero:'Quero ler', lendo:'Lendo', lido:'Lidos'};
 const CORES = ['#6b3fb5','#2f6f5e','#b5523b','#2d5b8a','#a3781f','#8a3262','#4a4a7a','#3d7a3a'];
+const ESTAMPAS = {
+  lisa: '',
+  listras: 'repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 6px,transparent 6px 16px)',
+  bolinhas: 'radial-gradient(circle,rgba(255,255,255,.3) 3px,transparent 4px) 0 0/18px 18px',
+  xadrez: 'conic-gradient(rgba(255,255,255,.18) 25%,transparent 0 50%,rgba(255,255,255,.18) 0 75%,transparent 0) 0 0/24px 24px',
+  ondas: 'radial-gradient(circle at 50% 120%,transparent 34%,rgba(255,255,255,.28) 36% 40%,transparent 42%) 0 0/26px 26px',
+  diagonais: 'repeating-linear-gradient(45deg,rgba(255,255,255,.2) 0 4px,transparent 4px 14px)'
+};
+function capa(b){ const e = ESTAMPAS[b.estampa]; const base = b.color || `hsl(${hue(b.title)} 38% 36%)`; return e ? `${e}, ${base}` : base; }
 const F = $('#frm');
 const fv = n => F.elements.namedItem(n);
 
@@ -190,7 +213,7 @@ function mesNome(ym){
 function shelf(arr){
   return `<div class="shelf">${arr.map(b => `
     <button class="bk" data-id="${b.id}" aria-label="${esc(b.title)}">
-      <span class="spine" style="background:${b.color || 'hsl(' + hue(b.title) + ' 38% 36%)'}">${esc(b.title.slice(0, 40))}</span>
+      <span class="spine" style="background:${capa(b)}">${esc(b.title.slice(0, 40))}</span>
       <small>${stars(b.rating)}</small>
     </button>`).join('')}</div>`;
 }
@@ -255,12 +278,14 @@ function openDlg(id){
     fv('month').value = b.month || '';
     fv('current').value = b.current || '';
     fv('color').value = b.color || CORES[0];
+    fv('estampa').value = b.estampa || 'lisa';
     fv('frase').value = b.frase || '';
     chars = (b.chars || []).map(c => ({...c}));
     fv('review').value = b.review || '';
   } else {
     fv('status').value = tab;
     fv('color').value = CORES[books.length % CORES.length];
+    fv('estampa').value = 'lisa';
     chars = [];
   }
   setStars(b ? (b.rating || 0) : 0);
@@ -282,12 +307,44 @@ function celebrate(n, frase){
   o.onclick = close;
   setTimeout(close, max ? 4800 : n * 280 + 2200);
 }
+let lastOrigin = null;
+function makeGhost(b, x, y){
+  const g = document.createElement('div');
+  g.className = 'flyer';
+  g.style.background = capa(b);
+  g.style.left = (x - 45) + 'px';
+  g.style.top = (y - 75) + 'px';
+  g.textContent = b.title;
+  document.body.appendChild(g);
+  return g;
+}
+function pullBook(id, el){
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  const r = el.getBoundingClientRect();
+  lastOrigin = {x: r.left + r.width / 2, y: r.top + r.height / 2};
+  const dx = window.innerWidth / 2 - lastOrigin.x, dy = window.innerHeight / 2 - lastOrigin.y;
+  const g = makeGhost(b, lastOrigin.x, lastOrigin.y);
+  g.animate([{transform: 'translate(0,0) scale(1)'}, {transform: `translate(${dx}px,${dy}px) scale(1.35) rotateY(-12deg)`}], {duration: 480, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards'}).onfinish = () => { openDlg(id); g.remove(); };
+}
+function flyBack(id){
+  const origin = lastOrigin;
+  lastOrigin = null;
+  const b = id && books.find(x => x.id === id);
+  if (!origin || !b) return;
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  const el = document.querySelector(`#main [data-id="${id}"]`);
+  const t = el ? el.getBoundingClientRect() : null;
+  const tx = t ? t.left + t.width / 2 : origin.x, ty = t ? t.top + t.height / 2 : origin.y;
+  const g = makeGhost(b, cx, cy);
+  g.animate([{transform: 'translate(0,0) scale(1.35) rotateY(-12deg)', opacity: 1}, {transform: `translate(${tx - cx}px,${ty - cy}px) scale(1)`, opacity: t ? 1 : 0}], {duration: 520, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards'}).onfinish = () => g.remove();
+}
 function closeBook(cb){
   const d = $('#dlg');
   if (!d.open || d.classList.contains('book-close')) { if (cb) cb(); return; }
   d.classList.add('book-close');
   let done = false;
-  const finish = () => { if (done) return; done = true; d.classList.remove('book-close'); d.close(); if (cb) cb(); };
+  const finish = () => { if (done) return; done = true; d.classList.remove('book-close'); d.close(); if (cb) cb(); flyBack(editId); };
   d.addEventListener('animationend', e => { if (e.target === d) finish(); }, {once: true});
   setTimeout(finish, 650);
 }
@@ -297,7 +354,7 @@ $('#sorts').onclick = e => { const b = e.target.closest('[data-sort]'); if (b) {
 $('#addChar').onclick = () => { readChars(); chars.push({name: '', rating: 0}); renderChars(); };
 $('#chars').onclick = e => { const rm = e.target.closest('[data-rm]'); if (rm) { readChars(); chars.splice(+rm.dataset.rm, 1); renderChars(); } };
 $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } };
-$('#main').onclick = e => { const b = e.target.closest('[data-id]'); if (b) openDlg(b.dataset.id); };
+$('#main').onclick = e => { const b = e.target.closest('[data-id]'); if (b) pullBook(b.dataset.id, b); };
 $('#stars').onclick = e => { const b = e.target.closest('[data-r]'); if (b) { const n = +b.dataset.r; setStars(n === rating ? 0 : n); } };
 fv('status').addEventListener('change', toggleMes);
 $('#cancel').onclick = () => closeBook();
@@ -316,6 +373,7 @@ F.addEventListener('submit', e => {
     review: fv('review').value.trim(),
     chars: chars.filter(c => c.name),
     frase: fv('frase').value.trim(),
+    estampa: fv('estampa').value,
     color: fv('color').value,
     current: s === 'lendo' ? Math.max(0, +fv('current').value || 0) : 0
   };
