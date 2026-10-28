@@ -56,6 +56,11 @@ textarea{resize:vertical;font-family:Literata,Georgia,serif;line-height:1.6}
 .bar i{display:block;height:100%;border-radius:99px}
 .rd-sub{font-size:13px;color:var(--muted)}
 input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
+.char{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.char select{width:auto}
+.sorts{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px}
+.sorts button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 12px;font:600 13px system-ui;cursor:pointer}
+.sorts button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 </style>
 </head>
 <body>
@@ -66,9 +71,10 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
   </div>
   <p class="summary" id="summary"></p>
   <nav class="tabs" id="tabs" role="tablist"></nav>
+  <div class="sorts" id="sorts"></div>
 </header>
 <main id="main"></main>
- 
+
 <dialog id="dlg">
   <form id="frm" class="form" autocomplete="off">
     <h2 id="dlgTitle">Novo livro</h2>
@@ -87,6 +93,7 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
     <label>Cor da capa<input name="color" type="color"></label>
     <div class="field">Nota<div id="stars"></div></div>
     <label>Resenha<textarea name="review" rows="7" placeholder="O que ficou com você? Personagens, ritmo, o final…"></textarea></label>
+    <div class="field">Personagens e notas<div id="chars"></div><button type="button" class="ghost" id="addChar">+ Adicionar personagem</button></div>
     <div class="actions">
       <button type="button" class="danger" id="del" hidden>Excluir</button>
       <span class="grow"></span>
@@ -95,7 +102,7 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
     </div>
   </form>
 </dialog>
- 
+
 <script>
 const KEY = 'minha-estante-v1';
 const $ = s => document.querySelector(s);
@@ -104,18 +111,35 @@ const ST = {quero:'Quero ler', lendo:'Lendo', lido:'Lidos'};
 const CORES = ['#6b3fb5','#2f6f5e','#b5523b','#2d5b8a','#a3781f','#8a3262','#4a4a7a','#3d7a3a'];
 const F = $('#frm');
 const fv = n => F.elements.namedItem(n);
- 
+
 let books = [];
 try { books = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { books = []; }
 if (!Array.isArray(books)) books = [];
- 
-let tab = 'lendo', rating = 0, editId = null, armed = false;
- 
+
+let tab = 'lendo', rating = 0, editId = null, armed = false, sortBy = 'add', chars = [];
+
 function persist(){ try { localStorage.setItem(KEY, JSON.stringify(books)); } catch (e) {} }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function hue(t){ let h = 7; for (const c of t) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
 function stars(n){ return n ? '★'.repeat(n) + '☆'.repeat(5 - n) : '–'; }
 function fmt(n){ return Number(n).toLocaleString('pt-BR'); }
+function sortList(arr){
+  const c = (a, b) => (a || '').localeCompare(b || '', 'pt-BR', {sensitivity: 'base'});
+  const x = [...arr];
+  if (sortBy === 'titulo') return x.sort((a, b) => c(a.title, b.title));
+  if (sortBy === 'autor') return x.sort((a, b) => c(a.author || '\uffff', b.author || '\uffff') || c(a.title, b.title));
+  return x;
+}
+function body(list){ return tab === 'lendo' ? readingList(list) : `<section class="month">${shelf(list)}</section>`; }
+function byAuthor(list){
+  const g = {};
+  list.forEach(b => { const k = b.author || 'Autor desconhecido'; (g[k] = g[k] || []).push(b); });
+  return Object.keys(g).sort((a, b) => a.localeCompare(b, 'pt-BR', {sensitivity: 'base'})).map(k => `<section class="month"><h2>${esc(k)}<span>${g[k].length} ${g[k].length > 1 ? 'livros' : 'livro'}</span></h2>${body(g[k])}</section>`).join('');
+}
+function readChars(){ chars = [...document.querySelectorAll('#chars .char')].map(r => ({name: r.querySelector('input').value.trim(), rating: +r.querySelector('select').value})); }
+function renderChars(){
+  $('#chars').innerHTML = chars.map((c, i) => `<div class="char"><input value="${esc(c.name)}" placeholder="Nome do personagem" maxlength="60"><select aria-label="Nota do personagem">${[0, 1, 2, 3, 4, 5].map(n => `<option value="${n}"${c.rating === n ? ' selected' : ''}>${n ? '★'.repeat(n) : '–'}</option>`).join('')}</select><button type="button" class="ghost" data-rm="${i}" aria-label="Remover personagem">×</button></div>`).join('');
+}
 function pct(b){ if (b.status === 'lido') return 100; const t = +b.pages; if (!t) return 0; return Math.min(100, Math.round((+b.current || 0) / t * 100)); }
 function readingList(list){
   return `<section class="reading">${list.map(b => { const p = pct(b); return `<button class="rd" data-id="${b.id}"><span class="rd-top"><b>${esc(b.title)}</b><em>${p}%</em></span><span class="bar"><i style="width:${p}%;background:${b.color || 'var(--accent)'}"></i></span><span class="rd-sub">${esc(b.author || 'Autor desconhecido')}${b.pages ? ` · ${fmt(+b.current || 0)} de ${fmt(b.pages)} págs` : ''}</span></button>`; }).join('')}</section>`;
@@ -127,7 +151,7 @@ function mesNome(ym){
   const s = new Date(+y, +m - 1, 1).toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'});
   return s[0].toUpperCase() + s.slice(1);
 }
- 
+
 function shelf(arr){
   return `<div class="shelf">${arr.map(b => `
     <button class="bk" data-id="${b.id}" aria-label="${esc(b.title)}">
@@ -135,7 +159,7 @@ function shelf(arr){
       <small>${stars(b.rating)}</small>
     </button>`).join('')}</div>`;
 }
- 
+
 function render(){
   const y = String(new Date().getFullYear());
   const lidos = books.filter(b => b.status === 'lido');
@@ -146,12 +170,12 @@ function render(){
   $('#summary').textContent = books.length
     ? `${ano.length} lidos em ${y}, ${fmt(pags)} páginas, nota média ${media}.`
     : 'Sua estante está vazia. Adicione o que você quer ler ou já leu.';
- 
+
   $('#tabs').innerHTML = Object.entries(ST).map(([k, l]) =>
     `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-tab="${k}">${l} <small>${books.filter(b => b.status === k).length}</small></button>`
   ).join('');
- 
-  const list = books.filter(b => b.status === tab);
+
+  const list = sortList(books.filter(b => b.status === tab));
   let html = '';
   if (!list.length) {
     html = `<p class="empty">${
@@ -165,20 +189,21 @@ function render(){
       html += `<section class="month"><h2>${mesNome(k)}<span>${g[k].length} ${g[k].length > 1 ? 'livros' : 'livro'}</span></h2>${shelf(g[k])}</section>`;
     });
   } else {
-    html = tab === 'lendo' ? readingList(list) : `<section class="month">${shelf(list)}</section>`;
+    html = sortBy === 'autor' ? byAuthor(list) : body(list);
   }
+  $('#sorts').innerHTML = books.length ? [['add', 'Ordem de cadastro'], ['titulo', 'Título A–Z'], ['autor', 'Autor A–Z']].map(([k, l]) => `<button class="${sortBy === k ? 'on' : ''}" data-sort="${k}">${l}</button>`).join('') : '';
   $('#main').innerHTML = html;
 }
- 
+
 function setStars(n){
   rating = n;
   $('#stars').innerHTML = [1, 2, 3, 4, 5].map(i =>
     `<button type="button" class="st${i <= n ? ' on' : ''}" data-r="${i}" aria-label="${i} ${i > 1 ? 'estrelas' : 'estrela'}">★</button>`
   ).join('');
 }
- 
+
 function toggleMes(){ $('#mesWrap').hidden = fv('status').value !== 'lido'; $('#pagWrap').hidden = fv('status').value !== 'lendo'; }
- 
+
 function openDlg(id){
   editId = id;
   armed = false;
@@ -195,25 +220,32 @@ function openDlg(id){
     fv('month').value = b.month || '';
     fv('current').value = b.current || '';
     fv('color').value = b.color || CORES[0];
+    chars = (b.chars || []).map(c => ({...c}));
     fv('review').value = b.review || '';
   } else {
     fv('status').value = tab;
     fv('color').value = CORES[books.length % CORES.length];
+    chars = [];
   }
   setStars(b ? (b.rating || 0) : 0);
+  renderChars();
   toggleMes();
   $('#dlg').showModal();
 }
- 
+
 $('#add').onclick = () => openDlg(null);
+$('#sorts').onclick = e => { const b = e.target.closest('[data-sort]'); if (b) { sortBy = b.dataset.sort; render(); } };
+$('#addChar').onclick = () => { readChars(); chars.push({name: '', rating: 0}); renderChars(); };
+$('#chars').onclick = e => { const rm = e.target.closest('[data-rm]'); if (rm) { readChars(); chars.splice(+rm.dataset.rm, 1); renderChars(); } };
 $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } };
 $('#main').onclick = e => { const b = e.target.closest('[data-id]'); if (b) openDlg(b.dataset.id); };
 $('#stars').onclick = e => { const b = e.target.closest('[data-r]'); if (b) { const n = +b.dataset.r; setStars(n === rating ? 0 : n); } };
 fv('status').addEventListener('change', toggleMes);
 $('#cancel').onclick = () => $('#dlg').close();
- 
+
 F.addEventListener('submit', e => {
   e.preventDefault();
+  readChars();
   const s = fv('status').value;
   const data = {
     title: fv('title').value.trim(),
@@ -223,6 +255,7 @@ F.addEventListener('submit', e => {
     month: s === 'lido' ? (fv('month').value || hoje()) : '',
     rating,
     review: fv('review').value.trim(),
+    chars: chars.filter(c => c.name),
     color: fv('color').value,
     current: s === 'lendo' ? Math.max(0, +fv('current').value || 0) : 0
   };
@@ -233,7 +266,7 @@ F.addEventListener('submit', e => {
   tab = s;
   render();
 });
- 
+
 $('#del').onclick = () => {
   if (!editId) return;
   if (!armed) {
@@ -246,7 +279,7 @@ $('#del').onclick = () => {
   $('#dlg').close();
   render();
 };
- 
+
 render();
 </script>
 </body>
