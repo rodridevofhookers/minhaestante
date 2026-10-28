@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Minha estante</title>
+<title>Minha Estante!</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&display=swap" rel="stylesheet">
 <style>
@@ -61,12 +61,43 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
 .sorts{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px}
 .sorts button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 12px;font:600 13px system-ui;cursor:pointer}
 .sorts button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.celebrate{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(18,12,30,.6);animation:cfade .3s ease both;cursor:pointer}
+.cbox{position:relative;text-align:center;padding:0 16px}
+.cstars{display:flex;gap:6px;justify-content:center}
+.cstar{font-size:52px;line-height:1;color:var(--star);opacity:0;transform:scale(.2) rotate(-40deg);animation:pop .55s cubic-bezier(.2,1.6,.4,1) forwards;text-shadow:0 0 14px rgba(255,200,80,.45)}
+.cmsg{margin:20px 0 0;font:600 20px Literata,Georgia,serif;color:#fff;opacity:0;animation:rise .5s ease forwards}
+.max .cstar{font-size:58px;animation:pop .6s cubic-bezier(.2,1.6,.4,1) forwards,glow 1.6s ease-in-out 1.2s infinite}
+.max .cmsg{font-size:28px;color:var(--star)}
+.spark{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--star);box-shadow:0 0 10px var(--star);opacity:0;animation:burst .9s ease-out forwards}
+@keyframes pop{to{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes cfade{from{opacity:0}to{opacity:1}}
+@keyframes glow{0%,100%{text-shadow:0 0 10px rgba(255,200,80,.4)}50%{text-shadow:0 0 30px rgba(255,220,120,.95),0 0 64px rgba(255,180,60,.6)}}
+@keyframes burst{0%{opacity:1;transform:translate(0,0) scale(.4)}75%{opacity:1}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1)}}
+@media (prefers-reduced-motion:reduce){.celebrate *{animation-duration:.01s!important;animation-iteration-count:1!important}}
+dialog[open]{animation:bookOpen .75s cubic-bezier(.22,.7,.2,1) both;transform-origin:left center;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+dialog[open].book-close{animation:bookClose .5s ease-in both}
+dialog::before{content:"";position:absolute;left:0;top:0;bottom:0;width:16px;border-radius:12px 0 0 12px;background:linear-gradient(90deg,rgba(0,0,0,.3),rgba(255,255,255,.08) 60%,transparent);pointer-events:none}
+@keyframes bookOpen{from{opacity:0;transform:perspective(1400px) rotateY(-80deg)}to{opacity:1;transform:perspective(1400px) rotateY(0)}}
+@keyframes bookClose{from{opacity:1;transform:perspective(1400px) rotateY(0)}to{opacity:0;transform:perspective(1400px) rotateY(-80deg)}}
+@media (prefers-reduced-motion:reduce){dialog[open],dialog[open].book-close{animation-duration:.01s}}
+dialog{--bg:#f7f7f4;--surface:#ffffff;--ink:#241d2e;--muted:#6f6880;--line:#d9d2e6;--accent:#6b3fb5;--star:#b98a12;--danger:#b1443a;background:#ffffff;color:var(--ink)}
+dialog::before{content:none}
+dialog::after{content:none}
+dialog[open]{animation:pageOpen .65s cubic-bezier(.2,.8,.2,1) both;transform-origin:center;box-shadow:0 20px 50px rgba(20,10,40,.35)}
+dialog[open].book-close{animation:pageClose .45s ease-in both}
+@keyframes pageOpen{0%{transform:scaleX(.02);opacity:.4}55%{opacity:1}100%{transform:scaleX(1);opacity:1}}
+@keyframes pageClose{from{transform:scaleX(1);opacity:1}to{transform:scaleX(.02);opacity:.4}}
+dialog{width:min(780px,94vw)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.pg{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:640px){.cols{grid-template-columns:1fr;gap:12px}}
 </style>
 </head>
 <body>
 <header>
   <div class="top">
-    <h1>Minha estante</h1>
+    <h1>Minha Estante</h1>
     <button class="primary" id="add">Adicionar livro</button>
   </div>
   <p class="summary" id="summary"></p>
@@ -78,6 +109,7 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
 <dialog id="dlg">
   <form id="frm" class="form" autocomplete="off">
     <h2 id="dlgTitle">Novo livro</h2>
+    <div class="cols"><div class="pg">
     <label>Título<input name="title" required maxlength="120"></label>
     <label>Autor<input name="author" maxlength="120"></label>
     <div class="row">
@@ -91,9 +123,12 @@ input[type=color]{width:64px;height:38px;padding:3px;cursor:pointer}
     <label id="mesWrap">Mês de leitura<input name="month" type="month"></label>
     <label id="pagWrap">Página atual<input name="current" type="number" min="0" inputmode="numeric"></label>
     <label>Cor da capa<input name="color" type="color"></label>
+    </div><div class="pg">
     <div class="field">Nota<div id="stars"></div></div>
-    <label>Resenha<textarea name="review" rows="7" placeholder="O que ficou com você? Personagens, ritmo, o final…"></textarea></label>
+    <label>Frase da avaliação<input name="frase" maxlength="120" placeholder="Escreva a frase que aparece com as estrelas"></label>
+    <label>Resenha<textarea name="review" rows="5" placeholder="O que ficou com você? Personagens, ritmo, o final…"></textarea></label>
     <div class="field">Personagens e notas<div id="chars"></div><button type="button" class="ghost" id="addChar">+ Adicionar personagem</button></div>
+    </div></div>
     <div class="actions">
       <button type="button" class="danger" id="del" hidden>Excluir</button>
       <span class="grow"></span>
@@ -220,6 +255,7 @@ function openDlg(id){
     fv('month').value = b.month || '';
     fv('current').value = b.current || '';
     fv('color').value = b.color || CORES[0];
+    fv('frase').value = b.frase || '';
     chars = (b.chars || []).map(c => ({...c}));
     fv('review').value = b.review || '';
   } else {
@@ -233,6 +269,29 @@ function openDlg(id){
   $('#dlg').showModal();
 }
 
+function celebrate(n, frase){
+  const max = n === 5;
+  const msgs = ['', 'Não foi para você', 'Ok', 'Bom', 'Muito bom', 'Obra-prima!'];
+  const o = document.createElement('div');
+  o.className = 'celebrate' + (max ? ' max' : '');
+  const stars = Array.from({length: n}, (_, i) => `<span class="cstar" style="animation-delay:${(i * 0.28).toFixed(2)}s">★</span>`).join('');
+  const sparks = max ? Array.from({length: 18}, (_, i) => { const a = i / 18 * Math.PI * 2; return `<i class="spark" style="--x:${Math.round(Math.cos(a) * 170)}px;--y:${Math.round(Math.sin(a) * 170)}px;animation-delay:${(1.55 + (i % 3) * 0.06).toFixed(2)}s"></i>`; }).join('') : '';
+  o.innerHTML = `<div class="cbox"><div class="cstars">${stars}</div><p class="cmsg" style="animation-delay:${(n * 0.28 + 0.1).toFixed(2)}s">${esc(frase)}</p></div>${sparks}`;
+  document.body.appendChild(o);
+  const close = () => o.remove();
+  o.onclick = close;
+  setTimeout(close, max ? 4800 : n * 280 + 2200);
+}
+function closeBook(cb){
+  const d = $('#dlg');
+  if (!d.open || d.classList.contains('book-close')) { if (cb) cb(); return; }
+  d.classList.add('book-close');
+  let done = false;
+  const finish = () => { if (done) return; done = true; d.classList.remove('book-close'); d.close(); if (cb) cb(); };
+  d.addEventListener('animationend', e => { if (e.target === d) finish(); }, {once: true});
+  setTimeout(finish, 650);
+}
+$('#dlg').addEventListener('cancel', e => { e.preventDefault(); closeBook(); });
 $('#add').onclick = () => openDlg(null);
 $('#sorts').onclick = e => { const b = e.target.closest('[data-sort]'); if (b) { sortBy = b.dataset.sort; render(); } };
 $('#addChar').onclick = () => { readChars(); chars.push({name: '', rating: 0}); renderChars(); };
@@ -241,7 +300,7 @@ $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { t
 $('#main').onclick = e => { const b = e.target.closest('[data-id]'); if (b) openDlg(b.dataset.id); };
 $('#stars').onclick = e => { const b = e.target.closest('[data-r]'); if (b) { const n = +b.dataset.r; setStars(n === rating ? 0 : n); } };
 fv('status').addEventListener('change', toggleMes);
-$('#cancel').onclick = () => $('#dlg').close();
+$('#cancel').onclick = () => closeBook();
 
 F.addEventListener('submit', e => {
   e.preventDefault();
@@ -256,15 +315,16 @@ F.addEventListener('submit', e => {
     rating,
     review: fv('review').value.trim(),
     chars: chars.filter(c => c.name),
+    frase: fv('frase').value.trim(),
     color: fv('color').value,
     current: s === 'lendo' ? Math.max(0, +fv('current').value || 0) : 0
   };
+  const oldRating = editId ? (books.find(b => b.id === editId) || {}).rating : undefined;
   if (editId) books = books.map(b => b.id === editId ? {...b, ...data} : b);
   else books.push({id: uid(), ...data});
   persist();
-  $('#dlg').close();
-  tab = s;
-  render();
+  const showStars = !!rating && (!editId || oldRating !== rating);
+  closeBook(() => { tab = s; render(); if (showStars) celebrate(rating, data.frase); });
 });
 
 $('#del').onclick = () => {
@@ -276,8 +336,7 @@ $('#del').onclick = () => {
   }
   books = books.filter(b => b.id !== editId);
   persist();
-  $('#dlg').close();
-  render();
+  closeBook(() => render());
 };
 
 render();
