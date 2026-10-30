@@ -105,6 +105,29 @@ dialog{width:min(780px,94vw)}
 .char select{font-size:14px}
 .char button{width:36px;height:36px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:20px;line-height:1;cursor:pointer}
 #addChar{width:100%;padding:10px;border:1px dashed var(--accent);border-radius:12px;background:none;color:var(--accent);font:600 14px system-ui;cursor:pointer}
+:root,:root:not([data-theme="light"]),:root[data-theme="dark"]{--bg:#08080c;--surface:#101018;--ink:#f1efff;--muted:#8b87a3;--line:#23213a;--wood:#2a2448;--accent:#a78bfa;--star:#f5c542;--danger:#f0716a;color-scheme:dark}
+body{background:var(--bg);-webkit-font-smoothing:antialiased}
+h1{font:800 34px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:-.02em;text-transform:uppercase;color:var(--ink)}
+.summary{font:500 12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tabs{border-bottom:0;gap:8px;margin-top:22px}
+.tabs button{border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:var(--surface);color:var(--muted);font:600 13px system-ui}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#0b0a12}
+.month h2{display:flex;align-items:center;gap:12px;font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.month h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.month h2 span{margin-left:0;font:500 11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+.shelf{border-bottom:6px solid var(--wood)}
+.reading{counter-reset:item}
+.rd{counter-increment:item;background:var(--surface);border:1px solid var(--line);border-radius:4px;transition:border-color .2s}
+.rd:hover{border-color:var(--accent)}
+.rd-top b{font:700 16px system-ui;letter-spacing:-.01em}
+.rd-top b::before{content:counter(item,decimal-leading-zero) "  ";color:var(--muted);font:500 12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.rd-top em{font:700 13px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}
+.bar{height:4px;border-radius:0;background:var(--line)}
+.bar i{border-radius:0}
+.rd-sub{font:400 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+.primary{border-radius:6px;background:var(--accent);color:#0b0a12;font:700 13px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;padding:11px 18px}
+.primary:hover{filter:brightness(1.1)}
+.sorts button{font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase}
 </style>
 </head>
 <body>
